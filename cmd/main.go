@@ -33,4 +33,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Get Blog Info
+	_, err = tistory.GetBlogInfo()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

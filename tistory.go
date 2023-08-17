@@ -63,8 +63,18 @@ func (t *Tistory) GetAuthorizationCode(id, password string) (string, error) {
 		return "", errors.New("id or password is empty")
 	}
 
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", false),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
+	)
+
+	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer cancel()
+
 	// Create chrome instance
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
 	// Navigate to tistory login page
@@ -81,9 +91,9 @@ func (t *Tistory) GetAuthorizationCode(id, password string) (string, error) {
 		chromedp.Sleep(1*time.Second),
 		chromedp.SendKeys(loginKaKaoIdXPath, id),
 		chromedp.SendKeys(loginKakaoPwXPath, password),
-		chromedp.Sleep(1*time.Second),
+		chromedp.Sleep(2*time.Second),
 		chromedp.Click(submitKaKaoButtonXPath), // class="btn_g highlight submit"
-		chromedp.Sleep(1*time.Second),
+		chromedp.Sleep(2*time.Second),
 		chromedp.Location(&confirmURL),
 	); err != nil {
 		return "", errors.Wrap(err, "Failed to Login with KAKAO_ID, KAKAO_PASSWORD")
@@ -157,4 +167,27 @@ func (t *Tistory) GetAccessToken() (string, error) {
 
 	t.AccessToken = strings.Split(bodyString, "=")[1]
 	return t.AccessToken, nil
+}
+
+func (t *Tistory) GetBlogInfo() (string, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"output":       {"json"},
+	}
+
+	blogInfoURL := fmt.Sprintf(
+		"https://www.tistory.com/apis/blog/info?%s", params.Encode())
+	resp, err := http.Get(blogInfoURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bodyString := string(respBytes)
+	return bodyString, nil
 }
