@@ -17,12 +17,13 @@ func init() {
 
 func main() {
 	clientId := os.Getenv("CLIENT_ID")
-	secretKey := os.Getenv("CLIENT_SECRET")
+	clientSecret := os.Getenv("CLIENT_SECRET")
 	blogURL := "https://jiaaan90.tistory.com"
-	tistory := tistory.NewTistory(blogURL, clientId, secretKey)
+	tistory := tistory.NewTistory(blogURL, clientId, clientSecret)
 
-	// Get AuthorizationCode
-	_, err := tistory.GetAuthorizationCode()
+	blogId := os.Getenv("KAKAO_ID")
+	blogPassword := os.Getenv("KAKAO_PASSWORD")
+	_, err := tistory.GetAuthorizationCode(blogId, blogPassword)
 	if err != nil {
 		log.Fatal(err)
 	}

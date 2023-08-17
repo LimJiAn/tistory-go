@@ -1,38 +1,56 @@
+// Package tistory implements a Tistory API Client.
+//
+// Tistory API Reference: https://tistory.github.io/document-tistory-apis/apis/
+
 package tistory
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/pkg/errors"
+)
+
+const (
+	loginURL = `https://www.tistory.com/auth/login`
+
+	loginKakaoButtonXPath  = `//*[@id="cMain"]/div/div/div/a[2]`
+	loginKaKaoIdXPath      = `//*[@id="loginId--1"]`
+	loginKakaoPwXPath      = `//*[@id="password--2"]`
+	submitKaKaoButtonXPath = `//*[@id="mainContent"]/div/div/form/div[4]/button[1]`
+
+	loginTistoryButtonXPath  = `//*[@id="cMain"]/div/div/div/a[3]`
+	loginTistoryIdXPath      = `//*[@id="loginId"]`
+	loginTistoryPwXPath      = `//*[@id="loginPw"]`
+	submitTistoryButtonXPath = `//*[@id="authForm"]/fieldset/button`
+
+	authButtonXPath = `//*[@id="contents"]/div[4]/button[1]`
+
+	loginAfterURL = `https://www.tistory.com/`
 )
 
 type Tistory struct {
 	BlogURL            string
 	ClientId           string
-	SecretKey          string
-	LoginURL           string
+	ClientSecret       string
 	AccessToken        string
 	AuthenticationURL  string
 	RedirectAuthURL    string
 	AuthenticationCode string
 }
 
-func NewTistory(blogURL, clientId, secretKey string) *Tistory {
+func NewTistory(blogURL, clientId, clientSecret string) *Tistory {
 	return &Tistory{
-		BlogURL:   blogURL,
-		ClientId:  clientId,
-		SecretKey: secretKey,
-		LoginURL: fmt.Sprintf(
-			"https://www.tistory.com/auth/login"),
+		BlogURL:      blogURL,
+		ClientId:     clientId,
+		ClientSecret: clientSecret,
 		AuthenticationURL: fmt.Sprintf(
 			"https://www.tistory.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code", clientId, blogURL),
 	}
@@ -40,71 +58,50 @@ func NewTistory(blogURL, clientId, secretKey string) *Tistory {
 
 // Login & Get AuthorizationCode
 // return authorizationCode, error
-func (t *Tistory) GetAuthorizationCode() (string, error) {
-	// Excute chrome
-	/*
-		opts := append(chromedp.DefaultExecAllocatorOptions[:],
-			chromedp.Flag("headless", false),
-			chromedp.Flag("disable-gpu", true),
-			chromedp.Flag("no-sandbox", true),
-			chromedp.Flag("disable-dev-shm-usage", true),
-		)
-		allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-		defer cancel()
-		ctx, cancel := chromedp.NewContext(allocCtx)
-		defer cancel()
-	*/
+func (t *Tistory) GetAuthorizationCode(id, password string) (string, error) {
+	if id == "" || password == "" {
+		return "", errors.New("id or password is empty")
+	}
 
+	// Create chrome instance
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
 
 	// Navigate to tistory login page
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(t.LoginURL),
+		chromedp.Navigate(loginURL),
 	); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Failed to Navigate to tistory login page")
 	}
 
-	// Login
-	if os.Getenv("KAKAO_ID") != "" && os.Getenv("KAKAO_PASSWORD") != "" {
-		if err := chromedp.Run(ctx,
-			// xpath
-			chromedp.Click(`//*[@id="cMain"]/div/div/div/a[2]`), // class="btn_login link_tistory_id"
-			chromedp.Sleep(2*time.Second),
-			chromedp.SendKeys(`//*[@id="loginId--1"]`, os.Getenv("KAKAO_ID")),
-			chromedp.SendKeys(`//*[@id="password--2"]`, os.Getenv("KAKAO_PASSWORD")),
-			chromedp.Sleep(1*time.Second),
-			chromedp.Click(`//*[@id="mainContent"]/div/div/form/div[4]/button[1]`), // class="btn_g highlight submit"
-			chromedp.Sleep(2*time.Second),
-		); err != nil {
-			return "", err
-		}
-	} else if os.Getenv("TISTORY_ID") != "" && os.Getenv("TISTORY_PASSWORD") != "" {
-		if err := chromedp.Run(ctx,
-			chromedp.Click(`//*[@id="cMain"]/div/div/div/a[3]`), // class="btn_login link_tistory_id"
-			chromedp.Sleep(2*time.Second),
-			chromedp.SendKeys(`//*[@id="loginId"]`, os.Getenv("TISTORY_ID")),
-			chromedp.SendKeys(`//*[@id="loginPw"]`, os.Getenv("TISTORY_PASSWORD")),
-			chromedp.Sleep(1*time.Second),
-			chromedp.Click(`//*[@id="authForm"]/fieldset/button`), // class="btn_login"
-			chromedp.Sleep(2*time.Second),
-		); err != nil {
-			return "", err
-		}
-	} else {
-		return "", errors.New(
-			"Please KAKAO_ID and KAKAO_PASSWORD or TISTORY_ID and TISTORY_PASSWORD in .env file")
+	var confirmURL string
+	// KAKAO_ID, KAKAO_PASSWORD
+	if err := chromedp.Run(ctx,
+		chromedp.Click(loginKakaoButtonXPath), // class="btn_login link_tistory_id"
+		chromedp.Sleep(1*time.Second),
+		chromedp.SendKeys(loginKaKaoIdXPath, id),
+		chromedp.SendKeys(loginKakaoPwXPath, password),
+		chromedp.Sleep(1*time.Second),
+		chromedp.Click(submitKaKaoButtonXPath), // class="btn_g highlight submit"
+		chromedp.Sleep(1*time.Second),
+		chromedp.Location(&confirmURL),
+	); err != nil {
+		return "", errors.Wrap(err, "Failed to Login with KAKAO_ID, KAKAO_PASSWORD")
+	}
+
+	if confirmURL != loginAfterURL {
+		return "", errors.New("Failed to Login")
 	}
 
 	// Get AuthenticationCode
 	if err := chromedp.Run(ctx,
 		chromedp.Navigate(t.AuthenticationURL),
 		chromedp.Sleep(1*time.Second),
-		chromedp.Click(`//*[@id="contents"]/div[4]/button[1]`),
+		chromedp.Click(authButtonXPath),
 		chromedp.Sleep(1*time.Second),
 		chromedp.Location(&t.RedirectAuthURL),
 	); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Failed to GetAuthenticationCode")
 	}
 
 	if t.RedirectAuthURL == "" {
@@ -128,7 +125,7 @@ func (t *Tistory) GetAuthorizationCode() (string, error) {
 func (t *Tistory) GetAccessToken() (string, error) {
 	params := url.Values{
 		"client_id":     {t.ClientId},
-		"client_secret": {t.SecretKey},
+		"client_secret": {t.ClientSecret},
 		"redirect_uri":  {t.BlogURL},
 		"code":          {t.AuthenticationCode},
 		"grant_type":    {"authorization_code"},
