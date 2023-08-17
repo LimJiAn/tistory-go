@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/LimJiAn/tistory"
+	"github.com/LimJiAn/tistory-go"
 	"github.com/joho/godotenv"
 )
 

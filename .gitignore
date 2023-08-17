@@ -25,3 +25,6 @@ tmp/
 
 # Exclude .env file
 .env
+
+# Exclude vendor directory
+vendor/
