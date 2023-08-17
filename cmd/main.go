@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -18,13 +17,19 @@ func init() {
 
 func main() {
 	clientId := os.Getenv("CLIENT_ID")
-	secretKey := os.Getenv("SECRET_KEY")
+	secretKey := os.Getenv("CLIENT_SECRET")
 	blogURL := "https://jiaaan90.tistory.com"
 	tistory := tistory.NewTistory(blogURL, clientId, secretKey)
 
-	authorizationCode, err := tistory.GetAuthorizationCode()
+	// Get AuthorizationCode
+	_, err := tistory.GetAuthorizationCode()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	fmt.Printf("authorizationCode: %v\n", authorizationCode)
+
+	// Get AccessToken
+	_, err = tistory.GetAccessToken()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -35,6 +39,7 @@ func NewTistory(blogURL, clientId, secretKey string) *Tistory {
 }
 
 // Login & Get AuthorizationCode
+// return authorizationCode, error
 func (t *Tistory) GetAuthorizationCode() (string, error) {
 	// Excute chrome
 	/*
@@ -88,7 +93,7 @@ func (t *Tistory) GetAuthorizationCode() (string, error) {
 		}
 	} else {
 		return "", errors.New(
-			"Please TISTORY_ID and TISTORY_PASSWORD or KAKAO_ID and KAKAO_PASSWORD in .env file")
+			"Please KAKAO_ID and KAKAO_PASSWORD or TISTORY_ID and TISTORY_PASSWORD in .env file")
 	}
 
 	// Get AuthenticationCode
@@ -118,4 +123,41 @@ func (t *Tistory) GetAuthorizationCode() (string, error) {
 
 	t.AuthenticationCode = strings.Split(t.AuthenticationCode, "&state")[0]
 	return t.AuthenticationCode, nil
+}
+
+func (t *Tistory) GetAccessToken() (string, error) {
+	params := url.Values{
+		"client_id":     {t.ClientId},
+		"client_secret": {t.SecretKey},
+		"redirect_uri":  {t.BlogURL},
+		"code":          {t.AuthenticationCode},
+		"grant_type":    {"authorization_code"},
+	}
+
+	accessTokenURL := fmt.Sprintf(
+		"https://www.tistory.com/oauth/access_token?%s", params.Encode())
+	resp, err := http.Get(accessTokenURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bodyString := string(respBytes)
+	if len(strings.Split(bodyString, "=")) < 2 {
+		return "", errors.New(
+			"Failed to GetAccessToken from bodyString (len(strings.Split(bodyString, \"=\")) < 2)")
+	}
+
+	if !strings.HasPrefix(bodyString, "access_token") {
+		return "", errors.New(
+			"Failed to GetAccessToken from bodyString (strings.Contains(bodyString, \"access_token\")")
+	}
+
+	t.AccessToken = strings.Split(bodyString, "=")[1]
+	return t.AccessToken, nil
 }
