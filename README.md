@@ -58,3 +58,7 @@ func main() {
 	}
 }
 ```
+
+## Reference
+#### [Tistory App Register](https://www.tistory.com/guide/api/manage/register)
+#### [Tistory Open API](https://tistory.github.io/document-tistory-apis/apis/)
