@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -71,25 +72,29 @@ func NewTistory(blogURL, clientId, clientSecret string) (*Tistory, error) {
 	}, nil
 }
 
-// Login & Get AuthorizationCode
-// return authorizationCode, error
+/*
+Login & Get AuthorizationCode
+https://tistory.github.io/document-tistory-apis/auth/authorization_code.html
+*/
 func (t *Tistory) GetAuthorizationCode(id, password string) (string, error) {
 	if id == "" || password == "" {
 		return "", errors.New("id or password is empty")
 	}
 
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", false),
-		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("no-sandbox", true),
-		chromedp.Flag("disable-dev-shm-usage", true),
-	)
+	/*
+		opts := append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", false),
+			chromedp.Flag("disable-gpu", true),
+			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("disable-dev-shm-usage", true),
+		)
 
-	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	defer cancel()
+		allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+		defer cancel()
+	*/
 
 	// Create chrome instance
-	ctx, cancel := chromedp.NewContext(allocCtx)
+	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
 
 	// Navigate to tistory login page
@@ -147,6 +152,10 @@ func (t *Tistory) GetAuthorizationCode(id, password string) (string, error) {
 	return t.AuthenticationCode, nil
 }
 
+/*
+GetAccessToken
+https://tistory.github.io/document-tistory-apis/auth/authorization_code.html
+*/
 func (t *Tistory) GetAccessToken() (string, error) {
 	params := url.Values{
 		"client_id":     {t.ClientId},
@@ -184,6 +193,12 @@ func (t *Tistory) GetAccessToken() (string, error) {
 	return t.AccessToken, nil
 }
 
+/*
+GetBlogInfo 블로그 정보
+access_token: 발급받은 access_token
+output: 출력방식
+https://tistory.github.io/document-tistory-apis/apis/v1/blog/list.html
+*/
 func (t *Tistory) GetBlogInfo() (map[string]interface{}, error) {
 	t.AccessToken = "ce196a9e476dd617519f2074286aa5c9_6a5d731ffc6022608f75393a7ea87cf4"
 	params := url.Values{
@@ -212,6 +227,12 @@ func (t *Tistory) GetBlogInfo() (map[string]interface{}, error) {
 	return result, nil
 }
 
+/*
+GetPostList 글 목록
+blogName: Blog Name (필수)
+page: 불러올 페이지 번호
+https://tistory.github.io/document-tistory-apis/apis/v1/post/list.html
+*/
 func (t *Tistory) GetPostList(pageNumber int) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
@@ -239,6 +260,12 @@ func (t *Tistory) GetPostList(pageNumber int) (map[string]interface{}, error) {
 	return result, nil
 }
 
+/*
+GetPost 글 읽기
+blogName: Blog Name (필수)
+postId: 글 번호 (필수)
+https://tistory.github.io/document-tistory-apis/apis/v1/post/read.html
+*/
 func (t *Tistory) GetPost(postId int) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
@@ -263,5 +290,168 @@ func (t *Tistory) GetPost(postId int) (map[string]interface{}, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
+	return result, nil
+}
+
+/*
+WritePost 글 작성
+blogName: Blog Name (필수)
+title: 글 제목 (필수)
+content: 글 내용
+visibility: 발행상태 (0: 비공개 - 기본값, 1: 보호, 3: 발행)
+category: 카테고리 아이디 (기본값: 0)
+published: 발행시간 (TIMESTAMP 이며 미래의 시간을 넣을 경우 예약. 기본값: 현재시간)
+slogan: 문자 주소
+tag: 태그 (',' 로 구분)
+acceptComment: 댓글 허용 (0, 1 - 기본값)
+password: 보호글 비밀번호
+*/
+func (t *Tistory) WritePost(option map[string]interface{}) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"output":       {"json"},
+		"blogName":     {t.BlogName},
+	}
+
+	for key, value := range option {
+		params.Add(key, fmt.Sprintf("%v", value))
+	}
+
+	writePostURL := "https://www.tistory.com/apis/post/write?"
+	resp, err := http.PostForm(writePostURL, params)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to WritePost (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+/*
+ModifyPost 글 수정
+blogName: Blog Name (필수)
+postId: 글 번호 (필수)
+title: 글 제목 (필수)
+content: 글 내용
+visibility: 발행상태 (0: 비공개 - 기본값, 1: 보호, 3: 발행)
+category: 카테고리 아이디 (기본값: 0)
+published: 발행시간 (TIMESTAMP 이며 미래의 시간을 넣을 경우 예약. 기본값: 현재시간)
+slogan: 문자 주소
+tag: 태그 (',' 로 구분)
+acceptComment: 댓글 허용 (0, 1 - 기본값)
+password: 보호글 비밀번호
+*/
+func (t *Tistory) ModifyPost(option map[string]interface{}) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"output":       {"json"},
+		"blogName":     {t.BlogName},
+	}
+
+	for key, value := range option {
+		params.Add(key, fmt.Sprintf("%v", value))
+	}
+
+	modifyPostURL := "https://www.tistory.com/apis/post/modify?"
+	resp, err := http.PostForm(modifyPostURL, params)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to ModifyPost (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+/*
+AttachPost 파일 첨부
+blogName: Blog Name 입니다.
+uploadedfile: 업로드할 파일 (multipart/form-data)
+*/
+func (t *Tistory) AttachPost(uploadedfile *multipart.FileHeader) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"blogName":     {t.BlogName},
+	}
+
+	content, err := uploadedfile.Open()
+	defer content.Close()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to AttachPost")
+	}
+
+	attachPostURL := fmt.Sprintf(
+		"https://www.tistory.com/apis/post/attach?%s", params.Encode())
+
+	resp, err := http.Post(attachPostURL, "multipart/form-data", content)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to AttachPost (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/*
+CategoryList 카테고리 목록
+id: 카테고리 ID
+name: 카테고리 이름
+parent: 부모 카테고리 ID
+label: 부모 카테고리를 포함한 전체 이름 ('/'로 구분)
+entries: 카테고리내 글 수
+*/
+func (t *Tistory) CategoryList() (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"blogName":     {t.BlogName},
+		"output":       {"json"},
+	}
+
+	categoryListURL := fmt.Sprintf(
+		"https://www.tistory.com/apis/category/list?%s", params.Encode())
+
+	resp, err := http.Get(categoryListURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to CategoryList (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }

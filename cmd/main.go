@@ -37,4 +37,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Get Post List
+	_, err = tistory.GetPostList(1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get Post
+	_, err = tistory.GetPost(1)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
