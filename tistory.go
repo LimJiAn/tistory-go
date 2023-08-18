@@ -6,6 +6,7 @@ package tistory
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -38,6 +39,7 @@ const (
 
 type Tistory struct {
 	BlogURL            string
+	BlogName           string
 	ClientId           string
 	ClientSecret       string
 	AccessToken        string
@@ -46,14 +48,27 @@ type Tistory struct {
 	AuthenticationCode string
 }
 
-func NewTistory(blogURL, clientId, clientSecret string) *Tistory {
+func NewTistory(blogURL, clientId, clientSecret string) (*Tistory, error) {
+	if blogURL == "" || clientId == "" || clientSecret == "" {
+		return nil, errors.New("blogURL or clientId or clientSecret is empty")
+	}
+
+	if len(strings.Split(blogURL, "//")) < 2 {
+		return nil, errors.New("blogURL is invalid")
+	}
+
+	if !strings.HasPrefix(blogURL, "https://") {
+		return nil, errors.New("blogURL is invalid")
+	}
+
 	return &Tistory{
 		BlogURL:      blogURL,
+		BlogName:     strings.Split(strings.Split(blogURL, "//")[1], ".")[0],
 		ClientId:     clientId,
 		ClientSecret: clientSecret,
 		AuthenticationURL: fmt.Sprintf(
 			"https://www.tistory.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code", clientId, blogURL),
-	}
+	}, nil
 }
 
 // Login & Get AuthorizationCode
@@ -91,7 +106,7 @@ func (t *Tistory) GetAuthorizationCode(id, password string) (string, error) {
 		chromedp.Sleep(1*time.Second),
 		chromedp.SendKeys(loginKaKaoIdXPath, id),
 		chromedp.SendKeys(loginKakaoPwXPath, password),
-		chromedp.Sleep(2*time.Second),
+		chromedp.Sleep(1*time.Second),
 		chromedp.Click(submitKaKaoButtonXPath), // class="btn_g highlight submit"
 		chromedp.Sleep(2*time.Second),
 		chromedp.Location(&confirmURL),
@@ -169,7 +184,8 @@ func (t *Tistory) GetAccessToken() (string, error) {
 	return t.AccessToken, nil
 }
 
-func (t *Tistory) GetBlogInfo() (string, error) {
+func (t *Tistory) GetBlogInfo() (map[string]interface{}, error) {
+	t.AccessToken = "ce196a9e476dd617519f2074286aa5c9_6a5d731ffc6022608f75393a7ea87cf4"
 	params := url.Values{
 		"access_token": {t.AccessToken},
 		"output":       {"json"},
@@ -183,11 +199,69 @@ func (t *Tistory) GetBlogInfo() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	respBytes, err := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to GetBlogInfo (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (t *Tistory) GetPostList(pageNumber int) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"blogName":     {t.BlogName},
+		"page":         {fmt.Sprintf("%d", pageNumber)},
+	}
+
+	postListURL := fmt.Sprintf(
+		"https://www.tistory.com/apis/post/list?%s", params.Encode())
+	resp, err := http.Get(postListURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to GetPostList (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (t *Tistory) GetPost(postId int) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"blogName":     {t.BlogName},
+		"postId":       {fmt.Sprintf("%d", postId)}}
+
+	postURL := fmt.Sprintf(
+		"https://www.tistory.com/apis/post/read?%s", params.Encode())
+
+	resp, err := http.Get(postURL)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer resp.Body.Close()
 
-	bodyString := string(respBytes)
-	return bodyString, nil
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to GetPost (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
