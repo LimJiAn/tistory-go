@@ -5,15 +5,7 @@ import (
 	"os"
 
 	"github.com/LimJiAn/tistory-go"
-	"github.com/joho/godotenv"
 )
-
-func init() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-}
 
 func main() {
 	clientId := os.Getenv("CLIENT_ID")
