@@ -16,6 +16,7 @@ go get github.com/LimJiAn/tistory-go
 
 Your Go app you can do something like
 
+#### Authorization ([인증 및 권한](https://tistory.github.io/document-tistory-apis/auth/authorization_code.html))
 ```go
 package main
 
@@ -50,39 +51,120 @@ func main() {
     if err != nil {
          log.Fatal(err)
     }
-
-    // Get Blog Info
-    _, err = tistory.GetBlogInfo()
+}
+```
+#### BlogInfo ([블로그 정보](https://tistory.github.io/document-tistory-apis/apis/v1/blog/list.html))
+```go
+    // Blog Info
+    info, err := tistory.GetBlogInfo()
     if err != nil {
         log.Fatal(err)
     }
+```
 
-    // Get Post List
-    _, err = tistory.GetPostList(1)
+#### PostList ([글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/post/list.html))
+```go
+    // Post List
+    res, err := tistory.GetPostList(1)
     if err != nil {
         log.Fatal(err)
     }
+```
 
-    // Get Post
-    _, err = tistory.GetPost(1)
+#### ReadPost ([글 읽기](https://tistory.github.io/document-tistory-apis/apis/v1/post/read.html))
+```go
+    // Read Post
+    res, err := tistory.GetPost(1)
     if err != nil {
         log.Fatal(err)
     }
+```
 
+#### WritePost ([글 작성](https://tistory.github.io/document-tistory-apis/apis/v1/post/write.html))
+```go
     // Write Post
-    _, err = tistory.WritePost(
-	    map[string]interface{}{"title": "title", "content": "content", "visibility": "3"})
+    res, err := tistory.WritePost(
+        map[string]interface{}{"title": "title", "content": "content", "visibility": "3"})
     if err != nil {
         log.Fatal(err)
     }
+```
 
+#### ModifyPost ([글 수정](https://tistory.github.io/document-tistory-apis/apis/v1/post/modify.html))
+```go
     // Modify Post
-    _, err = tistory.ModifyPost(
+    res, err := tistory.ModifyPost(
         map[string]interface{}{"postId": "1", "title": "title", "content": "content", "visibility": "3"})
     if err != nil {
         log.Fatal(err)
     }
-}
+```
+
+#### AttchFile ([파일 첨부](https://tistory.github.io/document-tistory-apis/apis/v1/post/attach.html))
+```go
+    // Attach File (only image)
+    fileName := "/UserFilepath/test.png"
+    res, err := tistory.AttachPost(fileName)
+    if err != nil {
+        log.Fatal(err)
+    }
+```
+
+#### CategoryList ([카테고리 목록](https://tistory.github.io/document-tistory-apis/apis/v1/category/list.html))
+```go
+    // Category List
+    res, err := tistory.CategoryList()
+    if err != nil {
+        log.Fatal(err)
+    }
+```
+
+#### RecentComment ([최근 댓글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/comment/recent.html))
+```go
+    // Recent Comment List
+    res, err := tistory.GetRecentCommentList(1, 1)
+    if err != nil {
+        log.Fatal(err)
+    }
+```
+
+#### CommentList ([게시글 댓글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/comment/list.html))
+```go
+    // Comment List
+    res, err := tistory.GetCommentList(1)
+    if err != nil {
+        log.Fatal(err)
+    }
+```
+
+#### WriteComment ([댓글 작성](https://tistory.github.io/document-tistory-apis/apis/v1/comment/write.html))
+```go
+    // Write Comment
+    res, err := tistory.WriteComment(
+        map[string]interface{}{"postId": "1", "content": "comment"})
+    if err != nil {
+        log.Fatal(err)
+    }
+```
+
+#### ModifyComment ([댓글 수정](https://tistory.github.io/document-tistory-apis/apis/v1/comment/modify.html))
+```go
+    // Modify Comment
+    info, err := tistory.ModifyComment(
+        map[string]interface{}{"postId": "1", "commentId": "1", "content": "comment"})
+    if err != nil {
+        log.Fatal(err)
+    }
+```
+
+#### DeleteComment ([댓글 삭제](https://tistory.github.io/document-tistory-apis/apis/v1/comment/delete.html))
+```go
+    // Delete Comment
+    info, err := tistory.DeleteComment(
+        map[string]interface{}{"postId": "1", "commentId": "1"})
+    if err != nil {
+        log.Fatal(err)
+    }
 ```
 
 ## Reference
