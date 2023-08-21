@@ -305,6 +305,7 @@ slogan: 문자 주소
 tag: 태그 (',' 로 구분)
 acceptComment: 댓글 허용 (0, 1 - 기본값)
 password: 보호글 비밀번호
+https://tistory.github.io/document-tistory-apis/apis/v1/post/write.html
 */
 func (t *Tistory) WritePost(option map[string]interface{}) (map[string]interface{}, error) {
 	params := url.Values{
@@ -349,6 +350,7 @@ slogan: 문자 주소
 tag: 태그 (',' 로 구분)
 acceptComment: 댓글 허용 (0, 1 - 기본값)
 password: 보호글 비밀번호
+https://tistory.github.io/document-tistory-apis/apis/v1/post/modify.html
 */
 func (t *Tistory) ModifyPost(option map[string]interface{}) (map[string]interface{}, error) {
 	params := url.Values{
@@ -382,8 +384,9 @@ func (t *Tistory) ModifyPost(option map[string]interface{}) (map[string]interfac
 
 /*
 AttachPost 파일 첨부
-blogName: Blog Name 입니다.
+blogName: Blog Name
 uploadedfile: 업로드할 파일 (multipart/form-data)
+https://tistory.github.io/document-tistory-apis/apis/v1/post/attach.html
 */
 func (t *Tistory) AttachPost(uploadedfile *multipart.FileHeader) (map[string]interface{}, error) {
 	params := url.Values{
@@ -446,6 +449,197 @@ func (t *Tistory) CategoryList() (map[string]interface{}, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New(
 			fmt.Sprintf("Failed to CategoryList (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/*
+GetComment 최신 댓글 목록 가져오기
+blogName: Blog Name
+page: 가져올 페이지 (기본값: 1)
+count: 페이지당 댓글 수 (기본값: 10, 최대값: 10)
+https://tistory.github.io/document-tistory-apis/apis/v1/comment/recent.html
+*/
+func (t *Tistory) GetNewCommentList(page, count int) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"blogName":     {t.BlogName},
+		"output":       {"json"},
+		"page":         {fmt.Sprintf("%d", page)},
+		"count":        {fmt.Sprintf("%d", count)},
+	}
+
+	getNewCommentListURL := fmt.Sprintf(
+		"https://www.tistory.com/apis/comment/newest?%s", params.Encode())
+
+	resp, err := http.Get(getNewCommentListURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to GetNewCommentList (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/*
+GetCommentList 댓글 목록 가져오기
+blogName: Blog Name
+postId: 글 번호 (ID)
+https://tistory.github.io/document-tistory-apis/apis/v1/comment/list.html
+*/
+func (t *Tistory) GetCommentList(postId int) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"blogName":     {t.BlogName},
+		"output":       {"json"},
+		"postId":       {fmt.Sprintf("%d", postId)},
+	}
+
+	getCommentListURL := fmt.Sprintf(
+		"https://www.tistory.com/apis/comment/list?%s", params.Encode())
+
+	resp, err := http.Get(getCommentListURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to GetCommentList (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/*
+WriteComment 댓글 작성
+blogName: Blog Name (필수)
+postId: 글 ID (필수)
+parentId: 부모 댓글 ID (대댓글인 경우 사용)
+content: 댓글 내용
+secret: 비밀 댓글 여부 (1: 비밀댓글, 0: 공개댓글 - 기본 값)
+https://tistory.github.io/document-tistory-apis/apis/v1/comment/write.html
+*/
+func (t *Tistory) WriteComment(option map[string]interface{}) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"blogName":     {t.BlogName},
+	}
+
+	for key, value := range option {
+		params.Add(key, fmt.Sprintf("%v", value))
+	}
+
+	writeCommentURL := "https://www.tistory.com/apis/comment/write?"
+	resp, err := http.PostForm(writeCommentURL, params)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to WriteComment (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/*
+ModifyComment 댓글 수정
+blogName: Blog Name (필수)
+postId: 글 ID (필수)
+commentId: 댓글 ID (필수)
+parentId: 부모 댓글 ID (대댓글인 경우 사용)
+content: 댓글 내용
+secret: 비밀 댓글 여부 (1: 비밀댓글, 0: 공개댓글 - 기본 값)
+https://tistory.github.io/document-tistory-apis/apis/v1/comment/modify.html
+*/
+func (t *Tistory) ModifyComment(option map[string]interface{}) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"blogName":     {t.BlogName},
+	}
+
+	for key, value := range option {
+		params.Add(key, fmt.Sprintf("%v", value))
+	}
+
+	modifyCommentURL := "https://www.tistory.com/apis/comment/modify?"
+	resp, err := http.PostForm(modifyCommentURL, params)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to ModifyComment (resp.StatusCode: %d)", resp.StatusCode))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/*
+DeleteComment 댓글 삭제
+blogName: Blog Name (필수)
+postId: 글 ID (필수)
+commentId: 댓글 ID (필수)
+https://tistory.github.io/document-tistory-apis/apis/v1/comment/delete.html
+*/
+func (t *Tistory) DeleteComment(option map[string]interface{}) (map[string]interface{}, error) {
+	params := url.Values{
+		"access_token": {t.AccessToken},
+		"output":       {"json"},
+		"blogName":     {t.BlogName},
+	}
+
+	for key, value := range option {
+		params.Add(key, fmt.Sprintf("%v", value))
+	}
+
+	deleteCommentURL := "https://www.tistory.com/apis/comment/delete?"
+	resp, err := http.PostForm(deleteCommentURL, params)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(
+			fmt.Sprintf("Failed to DeleteComment (resp.StatusCode: %d)", resp.StatusCode))
 	}
 
 	var result map[string]interface{}

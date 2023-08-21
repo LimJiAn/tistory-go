@@ -49,4 +49,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Write Post
+	_, err = tistory.WritePost(
+		map[string]interface{}{"title": "title", "content": "content", "visibility": "3"})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Modify Post
+	_, err = tistory.ModifyPost(
+		map[string]interface{}{"postId": "1", "title": "title", "content": "content", "visibility": "3"})
+
 }
