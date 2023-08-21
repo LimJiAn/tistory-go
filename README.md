@@ -90,5 +90,4 @@ func main() {
 #### [Tistory Open API](https://tistory.github.io/document-tistory-apis/)
 ##
 > #### API 사용 중 status 403 , error_message 이 블로그는 내부 정책으로 OPEN API 사용할 수 없습니다.
-> #### 아래와 같은 이유로 사용 제한됩니다.
-![스크린샷 2023-08-21 오후 1 38 03](https://github.com/LimJiAn/tistory-go/assets/85569173/4367ea1e-f18e-4eab-9f1f-9e469a7c7190)
+> #### -> 스팸성 게시물 작성이 증가하여 이용이 제한될 수 있습니다.
