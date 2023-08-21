@@ -36,6 +36,7 @@ const (
 	authButtonXPath = `//*[@id="contents"]/div[4]/button[1]`
 
 	loginAfterURL = `https://www.tistory.com/`
+	output        = `json`
 )
 
 type Tistory struct {
@@ -203,7 +204,7 @@ func (t *Tistory) GetBlogInfo() (map[string]interface{}, error) {
 	t.AccessToken = "ce196a9e476dd617519f2074286aa5c9_6a5d731ffc6022608f75393a7ea87cf4"
 	params := url.Values{
 		"access_token": {t.AccessToken},
-		"output":       {"json"},
+		"output":       {output},
 	}
 
 	blogInfoURL := fmt.Sprintf(
@@ -236,6 +237,7 @@ https://tistory.github.io/document-tistory-apis/apis/v1/post/list.html
 func (t *Tistory) GetPostList(pageNumber int) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
+		"output":       {output},
 		"blogName":     {t.BlogName},
 		"page":         {fmt.Sprintf("%d", pageNumber)},
 	}
@@ -269,6 +271,7 @@ https://tistory.github.io/document-tistory-apis/apis/v1/post/read.html
 func (t *Tistory) GetPost(postId int) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
+		"output":       {output},
 		"blogName":     {t.BlogName},
 		"postId":       {fmt.Sprintf("%d", postId)}}
 
@@ -310,7 +313,7 @@ https://tistory.github.io/document-tistory-apis/apis/v1/post/write.html
 func (t *Tistory) WritePost(option map[string]interface{}) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
-		"output":       {"json"},
+		"output":       {output},
 		"blogName":     {t.BlogName},
 	}
 
@@ -355,7 +358,7 @@ https://tistory.github.io/document-tistory-apis/apis/v1/post/modify.html
 func (t *Tistory) ModifyPost(option map[string]interface{}) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
-		"output":       {"json"},
+		"output":       {output},
 		"blogName":     {t.BlogName},
 	}
 
@@ -391,6 +394,7 @@ https://tistory.github.io/document-tistory-apis/apis/v1/post/attach.html
 func (t *Tistory) AttachPost(uploadedfile *multipart.FileHeader) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
+		"output":       {output},
 		"blogName":     {t.BlogName},
 	}
 
@@ -433,8 +437,8 @@ entries: 카테고리내 글 수
 func (t *Tistory) CategoryList() (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
+		"output":       {output},
 		"blogName":     {t.BlogName},
-		"output":       {"json"},
 	}
 
 	categoryListURL := fmt.Sprintf(
@@ -469,8 +473,8 @@ https://tistory.github.io/document-tistory-apis/apis/v1/comment/recent.html
 func (t *Tistory) GetNewCommentList(page, count int) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
+		"output":       {output},
 		"blogName":     {t.BlogName},
-		"output":       {"json"},
 		"page":         {fmt.Sprintf("%d", page)},
 		"count":        {fmt.Sprintf("%d", count)},
 	}
@@ -506,8 +510,8 @@ https://tistory.github.io/document-tistory-apis/apis/v1/comment/list.html
 func (t *Tistory) GetCommentList(postId int) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
+		"output":       {output},
 		"blogName":     {t.BlogName},
-		"output":       {"json"},
 		"postId":       {fmt.Sprintf("%d", postId)},
 	}
 
@@ -545,6 +549,7 @@ https://tistory.github.io/document-tistory-apis/apis/v1/comment/write.html
 func (t *Tistory) WriteComment(option map[string]interface{}) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
+		"output":       {output},
 		"blogName":     {t.BlogName},
 	}
 
@@ -585,6 +590,7 @@ https://tistory.github.io/document-tistory-apis/apis/v1/comment/modify.html
 func (t *Tistory) ModifyComment(option map[string]interface{}) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
+		"output":       {output},
 		"blogName":     {t.BlogName},
 	}
 
@@ -622,7 +628,7 @@ https://tistory.github.io/document-tistory-apis/apis/v1/comment/delete.html
 func (t *Tistory) DeleteComment(option map[string]interface{}) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
-		"output":       {"json"},
+		"output":       {output},
 		"blogName":     {t.BlogName},
 	}
 
