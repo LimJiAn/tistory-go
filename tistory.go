@@ -5,6 +5,7 @@
 package tistory
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -391,31 +393,53 @@ blogName: Blog Name
 uploadedfile: 업로드할 파일 (multipart/form-data)
 https://tistory.github.io/document-tistory-apis/apis/v1/post/attach.html
 */
-func (t *Tistory) AttachPost(uploadedfile *multipart.FileHeader) (map[string]interface{}, error) {
+func (t *Tistory) AttachPost(filePath string) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
 		"output":       {output},
 		"blogName":     {t.BlogName},
 	}
 
-	content, err := uploadedfile.Open()
-	defer content.Close()
+	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to AttachPost")
+		return nil, errors.Wrap(err, "Failed os open")
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("uploadedfile", file.Name())
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed create form file")
 	}
 
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed io copy")
+	}
+
+	// Close the multipart writer
+	err = writer.Close()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed writer close")
+	}
+
+	contentType := writer.FormDataContentType()
+	content := bytes.NewReader(body.Bytes())
 	attachPostURL := fmt.Sprintf(
 		"https://www.tistory.com/apis/post/attach?%s", params.Encode())
 
-	resp, err := http.Post(attachPostURL, "multipart/form-data", content)
+	resp, err := http.Post(attachPostURL, contentType, content)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
 		return nil, errors.New(
-			fmt.Sprintf("Failed to AttachPost (resp.StatusCode: %d)", resp.StatusCode))
+			fmt.Sprintf("Failed to AttachPost (resp.StatusCode: %d, body: %s)", resp.StatusCode, string(body)))
 	}
 
 	var result map[string]interface{}
@@ -470,7 +494,7 @@ page: 가져올 페이지 (기본값: 1)
 count: 페이지당 댓글 수 (기본값: 10, 최대값: 10)
 https://tistory.github.io/document-tistory-apis/apis/v1/comment/recent.html
 */
-func (t *Tistory) GetNewCommentList(page, count int) (map[string]interface{}, error) {
+func (t *Tistory) GetRecentCommentList(page, count int) (map[string]interface{}, error) {
 	params := url.Values{
 		"access_token": {t.AccessToken},
 		"output":       {output},
