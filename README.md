@@ -1,22 +1,22 @@
 # tistory-go
-[![Go](https://img.shields.io/badge/go-1.19-blue.svg?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/dl/)
+[![Go](https://img.shields.io/badge/go-1.21-blue.svg?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/dl/)
 [![Chromedp](https://img.shields.io/badge/chromedp-0.9.2-red.svg?style=for-the-badge&logo=go&logoColor=white)](https://pkg.go.dev/github.com/chromedp/chromedp)
 
-> #### tistory-go 는 티스토리 블로그(tistory blog) 자동화를 위한 Go 언어 Library 입니다.
+> #### 🎯 tistory-go 는 티스토리 블로그(tistory blog) 자동화를 위한 Go 언어 Library 입니다.
 
 
-## Installation
+## ⚙️ Installation
 
 As a library
 
 ```shell
 go get github.com/LimJiAn/tistory-go
 ```
-## Usage
+## 👀 Usage
 
 Your Go app you can do something like
 
-#### Authorization ([인증 및 권한](https://tistory.github.io/document-tistory-apis/auth/authorization_code.html))
+#### 📖 Authorization ([인증 및 권한](https://tistory.github.io/document-tistory-apis/auth/authorization_code.html))
 ```go
 package main
 
@@ -53,7 +53,7 @@ func main() {
     }
 }
 ```
-#### BlogInfo ([블로그 정보](https://tistory.github.io/document-tistory-apis/apis/v1/blog/list.html))
+#### 📖 BlogInfo ([블로그 정보](https://tistory.github.io/document-tistory-apis/apis/v1/blog/list.html))
 ```go
     // Blog Info
     info, err := tistory.GetBlogInfo()
@@ -62,7 +62,7 @@ func main() {
     }
 ```
 
-#### PostList ([글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/post/list.html))
+#### 📖 PostList ([글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/post/list.html))
 ```go
     // Post List
     res, err := tistory.GetPostList(1)
@@ -71,7 +71,7 @@ func main() {
     }
 ```
 
-#### ReadPost ([글 읽기](https://tistory.github.io/document-tistory-apis/apis/v1/post/read.html))
+#### 📖 ReadPost ([글 읽기](https://tistory.github.io/document-tistory-apis/apis/v1/post/read.html))
 ```go
     // Read Post
     res, err := tistory.GetPost(1)
@@ -80,7 +80,7 @@ func main() {
     }
 ```
 
-#### WritePost ([글 작성](https://tistory.github.io/document-tistory-apis/apis/v1/post/write.html))
+#### 📖 WritePost ([글 작성](https://tistory.github.io/document-tistory-apis/apis/v1/post/write.html))
 ```go
     // Write Post
     res, err := tistory.WritePost(
@@ -90,7 +90,7 @@ func main() {
     }
 ```
 
-#### ModifyPost ([글 수정](https://tistory.github.io/document-tistory-apis/apis/v1/post/modify.html))
+#### 📖 ModifyPost ([글 수정](https://tistory.github.io/document-tistory-apis/apis/v1/post/modify.html))
 ```go
     // Modify Post
     res, err := tistory.ModifyPost(
@@ -100,7 +100,7 @@ func main() {
     }
 ```
 
-#### AttchFile ([파일 첨부](https://tistory.github.io/document-tistory-apis/apis/v1/post/attach.html))
+#### 📖 AttchFile ([파일 첨부](https://tistory.github.io/document-tistory-apis/apis/v1/post/attach.html))
 ```go
     // Attach File (only image)
     fileName := "/UserFilepath/test.png"
@@ -110,7 +110,7 @@ func main() {
     }
 ```
 
-#### CategoryList ([카테고리 목록](https://tistory.github.io/document-tistory-apis/apis/v1/category/list.html))
+#### 📖 CategoryList ([카테고리 목록](https://tistory.github.io/document-tistory-apis/apis/v1/category/list.html))
 ```go
     // Category List
     res, err := tistory.CategoryList()
@@ -119,7 +119,7 @@ func main() {
     }
 ```
 
-#### RecentComment ([최근 댓글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/comment/recent.html))
+#### 📖 RecentComment ([최근 댓글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/comment/recent.html))
 ```go
     // Recent Comment List
     res, err := tistory.GetRecentCommentList(1, 1)
@@ -128,7 +128,7 @@ func main() {
     }
 ```
 
-#### CommentList ([게시글 댓글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/comment/list.html))
+#### 📖 CommentList ([게시글 댓글 목록](https://tistory.github.io/document-tistory-apis/apis/v1/comment/list.html))
 ```go
     // Comment List
     res, err := tistory.GetCommentList(1)
@@ -137,7 +137,7 @@ func main() {
     }
 ```
 
-#### WriteComment ([댓글 작성](https://tistory.github.io/document-tistory-apis/apis/v1/comment/write.html))
+#### 📖 WriteComment ([댓글 작성](https://tistory.github.io/document-tistory-apis/apis/v1/comment/write.html))
 ```go
     // Write Comment
     res, err := tistory.WriteComment(
@@ -147,7 +147,7 @@ func main() {
     }
 ```
 
-#### ModifyComment ([댓글 수정](https://tistory.github.io/document-tistory-apis/apis/v1/comment/modify.html))
+#### 📖 ModifyComment ([댓글 수정](https://tistory.github.io/document-tistory-apis/apis/v1/comment/modify.html))
 ```go
     // Modify Comment
     info, err := tistory.ModifyComment(
@@ -157,7 +157,7 @@ func main() {
     }
 ```
 
-#### DeleteComment ([댓글 삭제](https://tistory.github.io/document-tistory-apis/apis/v1/comment/delete.html))
+#### 📖 DeleteComment ([댓글 삭제](https://tistory.github.io/document-tistory-apis/apis/v1/comment/delete.html))
 ```go
     // Delete Comment
     info, err := tistory.DeleteComment(
@@ -167,7 +167,7 @@ func main() {
     }
 ```
 
-## Reference
+## 📚 Reference
 #### [Tistory App Register](https://www.tistory.com/guide/api/manage/register)
 #### [Tistory Open API](https://tistory.github.io/document-tistory-apis/)
 ##
